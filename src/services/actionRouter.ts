@@ -85,25 +85,28 @@ export class ActionRouter {
     conversationHistory: ConversationMessage[],
     isAutomateEnabled: boolean
   ): Promise<IntentResult> {
-    // Normalize input for fallback logic
     const normalizedInput = userInput.trim().toLowerCase();
-    // List of greetings and non-automation intents
     const greetings = ["hello", "hi", "hey", "how are you", "good morning", "good afternoon", "good evening"];
-    const nonAutomateIntents = [
-      "startup_greeting",
-      "location_query",
-      "document_capabilities",
-      "document_processing",
-      "play_song",
-      "connect_spotify",
-      "check_spotify_status"
+    const automationKeywords = [
+      "open", "launch", "start", "run", "execute", "create", "close", "stop", "record", "take", "search", "find"
+    ];
+    const automationFeatures = [
+      "camera", "calculator", "notepad", "document", "screenshot", "video", "email", "browser", "chrome", "tab", "window"
     ];
 
-    // Fallback: If automation is enabled and input is not a greeting, treat as automate_action
+    // If automation is enabled and input is not a greeting, check for automation keywords/features
     if (isAutomateEnabled && !greetings.includes(normalizedInput)) {
-      // Try to detect if the input is a known non-automation intent
-      // (This is a simple check; you may want to improve with more NLP if needed)
-      // If not, treat as automate_action
+      const containsAutomationKeyword = automationKeywords.some(word => normalizedInput.includes(word));
+      const containsAutomationFeature = automationFeatures.some(word => normalizedInput.includes(word));
+      if (containsAutomationKeyword || containsAutomationFeature) {
+        return {
+          intent: "automate_action",
+          confidence: 0.98,
+          params: { objective: userInput },
+          response: undefined
+        };
+      }
+      // Fallback: treat as automate_action for any non-greeting if automation is on
       return {
         intent: "automate_action",
         confidence: 0.95,
@@ -113,7 +116,7 @@ export class ActionRouter {
     }
 
     const automateIntentText = isAutomateEnabled 
-      ? ', "automate_action": detect requests to automate computer tasks like "open google", "send email", "create document", "take a screenshot", "search for files", etc.'
+      ? ', "automate_action": detect requests to automate computer tasks like "open google", "send email", "create document", "take a screenshot", "search for files", "open camera", "launch calculator", "start notepad", "record video", "close window", "switch to next tab", "open browser", etc.'
       : '';
 
     const systemPrompt = `You are an intent detection system. Analyze the user's input and respond with a JSON object containing:
@@ -145,7 +148,7 @@ Examples:
 - "question about the document" → {"intent":"document_processing","confidence":0.9,"params":{"action":"question"}}
 - "summarize (document: doc-123)" → {"intent":"document_processing","confidence":0.95,"params":{"action":"summarize","documentId":"doc-123"}}
 - "play bohemian rhapsody by queen" → {"intent":"play_song","confidence":0.95,"params":{"artist":"queen","song":"bohemian rhapsody"}}
-- "connect my spotify" → {"intent":"connect_spotify","confidence":0.9}${isAutomateEnabled ? '\n- "open google" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"open google"}}\n- "create a new document" → {"intent":"automate_action","confidence":0.9,"params":{"objective":"create a new document"}}\n- "send an email" → {"intent":"automate_action","confidence":0.9,"params":{"objective":"send an email"}}\n- "take a screenshot" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"take a screenshot"}}\n- "search for files" → {"intent":"automate_action","confidence":0.9,"params":{"objective":"search for files"}}\n- "open chrome" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"open chrome"}}\n- "launch notepad" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"launch notepad"}}\n- "type hello world" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"type hello world"}}\n- "close window" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"close window"}}\n- "switch to next tab" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"switch to next tab"}}' : ''}
+- "connect my spotify" → {"intent":"connect_spotify","confidence":0.9}${isAutomateEnabled ? '\n- "open google" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"open google"}}\n- "create a new document" → {"intent":"automate_action","confidence":0.9,"params":{"objective":"create a new document"}}\n- "send an email" → {"intent":"automate_action","confidence":0.9,"params":{"objective":"send an email"}}\n- "take a screenshot" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"take a screenshot"}}\n- "search for files" → {"intent":"automate_action","confidence":0.9,"params":{"objective":"search for files"}}\n- "open chrome" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"open chrome"}}\n- "launch notepad" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"launch notepad"}}\n- "type hello world" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"type hello world"}}\n- "close window" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"close window"}}\n- "switch to next tab" → {"intent":"automate_action","confidence":0.95,"params":{"objective":"switch to next tab"}}\n- "open camera" → {"intent":"automate_action","confidence":0.98,"params":{"objective":"open camera"}}\n- "launch calculator" → {"intent":"automate_action","confidence":0.98,"params":{"objective":"launch calculator"}}\n- "start notepad" → {"intent":"automate_action","confidence":0.98,"params":{"objective":"start notepad"}}\n- "record video" → {"intent":"automate_action","confidence":0.98,"params":{"objective":"record video"}}\n- "open browser" → {"intent":"automate_action","confidence":0.98,"params":{"objective":"open browser"}}' : ''}
 
 Special note: If the input contains "(document: [id])", extract the document ID and include it in params.
 
