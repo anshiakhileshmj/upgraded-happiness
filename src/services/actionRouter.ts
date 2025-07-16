@@ -94,27 +94,18 @@ export class ActionRouter {
       "camera", "calculator", "notepad", "document", "screenshot", "video", "email", "browser", "chrome", "tab", "window"
     ];
 
-    // If automation is enabled and input is not a greeting, check for automation keywords/features
+    // If automation is enabled, only automation is triggered (no LLM call)
     if (isAutomateEnabled && !greetings.includes(normalizedInput)) {
-      const containsAutomationKeyword = automationKeywords.some(word => normalizedInput.includes(word));
-      const containsAutomationFeature = automationFeatures.some(word => normalizedInput.includes(word));
-      if (containsAutomationKeyword || containsAutomationFeature) {
-        return {
-          intent: "automate_action",
-          confidence: 0.98,
-          params: { objective: userInput },
-          response: undefined
-        };
-      }
-      // Fallback: treat as automate_action for any non-greeting if automation is on
+      // Always treat as automate_action for any non-greeting if automation is on
       return {
         intent: "automate_action",
-        confidence: 0.95,
+        confidence: 0.98,
         params: { objective: userInput },
         response: undefined
       };
     }
 
+    // Only call LLM if automation is not enabled or input is a greeting
     const automateIntentText = isAutomateEnabled 
       ? ', "automate_action": detect requests to automate computer tasks like "open google", "send email", "create document", "take a screenshot", "search for files", "open camera", "launch calculator", "start notepad", "record video", "close window", "switch to next tab", "open browser", etc.'
       : '';
